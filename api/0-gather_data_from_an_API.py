@@ -1,44 +1,50 @@
 #!/usr/bin/python3
-
+"""We consume APIs to extract fictitious information."""
 import requests
-import sys
+from sys import argv
 
-def get_employee_todo_progress(employee_id):
-    # Base URL for the TODO API
-    base_url = "https://jsonplaceholder.typicode.com/users"
 
-    # Make a request to get employee details
-    employee_response = requests.get(f"{base_url}/{employee_id}")
-    employee_data = employee_response.json()
+def api_data():
+    """We query the name and tasks of an employee."""
+    if len(argv) > 1 and argv[1].isdigit():
+        user_ID = int(argv[1])
 
-    # Make a request to get TODO list for the employee
-    todo_response = requests.get(f"{base_url}/{employee_id}/todos")
-    todo_data = todo_response.json()
+    else:
+        return
 
-    # Calculate progress
-    total_tasks = len(todo_data)
-    completed_tasks = sum(task['completed'] for task in todo_data)
+    """Build the API URL to get user tasks."""
+    api_url = f"https://jsonplaceholder.typicode.com/todos?userId={user_ID}"
+    response = requests.get(api_url)
 
-    # Display information
-    print(f"Employee {employee_data['name']} is done with tasks ({completed_tasks}/{total_tasks}):")
-    print(f"\t{employee_data['name']}:", end=" ")
-    print(f"number of done tasks: {completed_tasks}", end=", ")
-    print(f"total number of tasks: {total_tasks}")
+    """Build the API URL to get user information"""
+    user_url = f"https://jsonplaceholder.typicode.com/users/{user_ID}"
+    users = requests.get(user_url)
 
-    # Display titles of completed tasks
-    print("Completed tasks:")
-    for task in todo_data:
-        if task['completed']:
-            print(f"\t- {task['title']}")
+    """Check if the user's information request was successful."""
+    if users.status_code == 200:
+        user = users.json()
+        # Get the user's name
+        EMPLOYEE_NAME = user["name"]
+    else:
+        print("Error:username not found.")
+
+    """Check if the task request was successful."""
+    if response.status_code == 200:
+        todos = response.json()
+        # Count the number of completed tasks and total tasks
+        NUMBER_OF_DONE_TASKS = sum(1 for todo in todos if todo['completed'])
+        TOTAL_NUMBER_OF_TASKS = len(todos)
+    else:
+        print("Error: Unable to get tasks. Please enter an existing user ID.")
+
+    print(f"Employee {EMPLOYEE_NAME} is done with tasks"
+          f"({NUMBER_OF_DONE_TASKS}/{TOTAL_NUMBER_OF_TASKS}):")
+
+    # Print titles of completed tasks
+    for todo in todos:
+        if todo["completed"]:
+            print("\t {}".format(todo["title"]))
+
 
 if __name__ == "__main__":
-    # Check if an employee ID is provided as a command-line argument
-    if len(sys.argv) != 2:
-        print("Usage: python script.py <employee_id>")
-        sys.exit(1)
-
-    employee_id = int(sys.argv[1])
-
-    # Call the function with the provided employee ID
-    get_employee_todo_progress(employee_id)
-
+    api_data()
