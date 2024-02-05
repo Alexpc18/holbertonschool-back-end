@@ -32,7 +32,7 @@ def api_data():
     """Check if the task request was successful."""
     if response.status_code == 200:
         todos = response.json()
-        
+
     else:
         print("Error: Unable to get tasks. Please enter an existing user ID.")
 
